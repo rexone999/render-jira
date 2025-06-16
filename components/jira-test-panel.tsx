@@ -6,7 +6,12 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Loader2, CheckCircle, XCircle, User, FolderOpen, Settings, AlertTriangle, AlertCircle } from "lucide-react"
 
-export function JiraTestPanel() {
+interface JiraTestPanelProps {
+  jiraContext: any | null;
+  isInJira: boolean;
+}
+
+export function JiraTestPanel({ jiraContext, isInJira }: JiraTestPanelProps) {
   const [testResult, setTestResult] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(false)
 

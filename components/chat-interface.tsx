@@ -23,9 +23,11 @@ interface Message {
 
 interface ChatInterfaceProps {
   onStoriesGenerated?: (stories: any[]) => void
+  jiraContext: any | null
+  isInJira: boolean
 }
 
-export function ChatInterface({ onStoriesGenerated }: ChatInterfaceProps) {
+export function ChatInterface({ onStoriesGenerated, jiraContext, isInJira }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",

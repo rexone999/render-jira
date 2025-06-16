@@ -13,9 +13,11 @@ import { useToast } from "@/hooks/use-toast"
 
 interface BRDUploaderProps {
   onStoriesGenerated: (stories: any[]) => void
+  jiraContext: any | null
+  isInJira: boolean
 }
 
-export function BRDUploader({ onStoriesGenerated }: BRDUploaderProps) {
+export function BRDUploader({ onStoriesGenerated, jiraContext, isInJira }: BRDUploaderProps) {
   const [isGenerating, setIsGenerating] = useState(false)
   const [brdContent, setBrdContent] = useState("")
   const [projectName, setProjectName] = useState("")

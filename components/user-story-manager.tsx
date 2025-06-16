@@ -25,9 +25,11 @@ interface UserStory {
 
 interface UserStoryManagerProps {
   stories: UserStory[]
+  jiraContext: any | null
+  isInJira: boolean
 }
 
-export function UserStoryManager({ stories }: UserStoryManagerProps) {
+export function UserStoryManager({ stories, jiraContext, isInJira }: UserStoryManagerProps) {
   const [selectedStories, setSelectedStories] = useState<string[]>([])
   const [editingStory, setEditingStory] = useState<string | null>(null)
   const [editedContent, setEditedContent] = useState("")

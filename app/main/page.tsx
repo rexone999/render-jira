@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, ReactNode } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -10,13 +10,36 @@ import { ChatInterface } from "@/components/chat-interface"
 import { UserStoryManager } from "@/components/user-story-manager"
 import { BRDUploader } from "@/components/brd-uploader"
 import { JiraTestPanel } from "@/components/jira-test-panel"
-import { JiraWrapper } from "@/components/jira-wrapper"
+import JiraWrapper from "@/components/jira-wrapper"
+
+interface JiraAPI {
+  request: (options: { url: string; success: (data: string) => void; error: (error: any) => void }) => void;
+}
+
+interface JiraUser {
+  displayName: string;
+  emailAddress: string;
+}
+
+interface JiraContext {
+  jira: JiraAPI;
+  user: JiraUser;
+}
+
+interface Story {
+  id: string;
+  title: string;
+  description: string;
+  type: "epic" | "story";
+  acceptanceCriteria: string[];
+  priority: "High" | "Medium" | "Low";
+}
 
 export default function MainPage() {
   const [activeTab, setActiveTab] = useState("upload")
-  const [generatedStories, setGeneratedStories] = useState([])
+  const [generatedStories, setGeneratedStories] = useState<Story[]>([])
   const [isInJira, setIsInJira] = useState(false)
-  const [jiraContext, setJiraContext] = useState(null)
+  const [jiraContext, setJiraContext] = useState<JiraContext | null>(null)
 
   useEffect(() => {
     // Check if running inside Jira
@@ -28,7 +51,7 @@ export default function MainPage() {
       // Load Atlassian Connect JavaScript API
       loadAtlassianConnectAPI().then(() => {
         if (window.AP) {
-          window.AP.require(['jira', 'user'], (jira, user) => {
+          window.AP.require(['jira', 'user'], (jira: JiraAPI, user: JiraUser) => {
             setJiraContext({ jira, user })
           })
           // Resize iframe to content
@@ -39,7 +62,7 @@ export default function MainPage() {
   }, [])
 
   const loadAtlassianConnectAPI = () => {
-    return new Promise((resolve) => {
+    return new Promise<void>((resolve) => {
       if (window.AP) {
         resolve()
         return
@@ -47,7 +70,7 @@ export default function MainPage() {
       
       const script = document.createElement('script')
       script.src = 'https://connect-cdn.atl-paas.net/all.js'
-      script.onload = resolve
+      script.onload = () => resolve()
       document.head.appendChild(script)
     })
   }
