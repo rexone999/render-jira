@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global styles for fast loading */
+body {
+  background: #f8f9fa;
+  margin: 0;
+  padding: 0;
+}
+
+/* Ensure iframe compatibility */
+html,
+body {
+  height: 100%;
+  overflow-x: hidden;
+}
+
+/* Fast loading optimizations */
+* {
+  box-sizing: border-box;
+}
+
+/* Prevent layout shifts */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Smooth transitions */
+a {
+  transition: color 0.2s ease;
+}
+
+/* Loading states */
+.loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* Iframe specific styles */
+.iframe-content {
+  width: 100%;
+  min-height: 100vh;
+  border: none;
+  overflow: hidden;
+}
