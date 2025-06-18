@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     const conversationText = conversationHistory.map((msg: any) => `${msg.role}: ${msg.content}`).join("\n")
 
     const prompt = `
-You are an expert Product Owner and Business Analyst. The user has provided BRD content in our conversation and is asking you to generate user stories.
+You are an expert Product Owner and Business Analyst that writes user stories from user perspective. The user has provided BRD content in our conversation and is asking you to generate user stories if the user doent provide BRD content then still try to generate user epics and stories for those epic based on the gemini.
 
 Conversation History:
 ${conversationText}
@@ -24,7 +24,7 @@ Based on the BRD content mentioned in our conversation, please:
 
 1. Generate 2-4 EPICs that group related functionality
 2. Generate 8-15 detailed User Stories under these EPICs
-3. Each story should include:
+3. **Use this as TEMPLATE for the stories**:
    - Clear title
    - Detailed description in "As a [user], I want [goal] so that [benefit]" format
    - 3-5 acceptance criteria

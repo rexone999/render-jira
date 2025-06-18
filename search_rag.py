@@ -3,43 +3,48 @@ import pickle
 import numpy as np
 import faiss
 from sentence_transformers import SentenceTransformer
+import os
 
-def search_similar(query, similarity_threshold=0.4, top_k=15):
+def search_similar(query, similarity_threshold=0.3, top_k=15):
     """Search for similar documents with similarity threshold filtering"""
-    # Load latest paths
-    with open('vector_db/latest_paths.json', 'r') as f:
-        paths = json.load(f)
-        index_path = paths['index_path']
-        docs_path = paths['documents_path']
-    
-    # Load embedding model
-    model = SentenceTransformer('all-MiniLM-L6-v2')
-    
-    # Load index and documents
-    index = faiss.read_index(index_path)
-    with open(docs_path, 'rb') as f:
-        documents = pickle.load(f)
-    
-    # Create query embedding
-    query_embedding = model.encode([query])
-    query_embedding = query_embedding.astype('float32')
-    faiss.normalize_L2(query_embedding)
-    
-    # Search with higher top_k to get more candidates for filtering
-    scores, indices = index.search(query_embedding, top_k)
-    
-    results = []
-    for score, idx in zip(scores[0], indices[0]):
-        if idx < len(documents) and score >= similarity_threshold:
-            result = documents[idx].copy()
-            result['similarity_score'] = float(score)
-            results.append(result)
-    
-    # Sort by similarity score (descending)
-    results.sort(key=lambda x: x['similarity_score'], reverse=True)
-    
-    print(f"Found {len(results)} results above similarity threshold of {similarity_threshold}")
-    return results
+    try:
+        # Load latest paths
+        with open('vector_db/latest_paths.json', 'r') as f:
+            paths = json.load(f)
+            index_path = paths['index_path']
+            docs_path = paths['documents_path']
+        
+        # Load embedding model
+        model = SentenceTransformer('all-MiniLM-L6-v2')
+        
+        # Load index and documents
+        index = faiss.read_index(index_path)
+        with open(docs_path, 'rb') as f:
+            documents = pickle.load(f)
+        
+        # Create query embedding
+        query_embedding = model.encode([query])
+        query_embedding = query_embedding.astype('float32')
+        faiss.normalize_L2(query_embedding)
+        
+        # Search with higher top_k to get more candidates for filtering
+        scores, indices = index.search(query_embedding, top_k)
+        
+        results = []
+        for score, idx in zip(scores[0], indices[0]):
+            if idx < len(documents) and score >= similarity_threshold:
+                result = documents[idx].copy()
+                result['similarity_score'] = float(score)
+                results.append(result)
+        
+        # Sort by similarity score (descending)
+        results.sort(key=lambda x: x['similarity_score'], reverse=True)
+        
+        print(f"Found {len(results)} results above similarity threshold of {similarity_threshold}")
+        return results
+    except Exception as e:
+        print(f"Error in search_similar: {str(e)}")
+        return []
 
 def search_tickets(query, similarity_threshold=0.4):
     """Search for tickets related to a query with similarity threshold"""
@@ -75,8 +80,9 @@ def search_tickets(query, similarity_threshold=0.4):
         return results
             
     except Exception as e:
-        print(f"Error searching: {e}")
-        print("Make sure you have run vector_db_builder.py first to create the vector database.")
+        print(f"Error searching: {str(e)}")
+        if not os.path.exists('vector_db/latest_paths.json'):
+            print("Make sure you have run vector_db_builder.py first to create the vector database.")
         return []
 
 def search_with_fixed_threshold(query):
