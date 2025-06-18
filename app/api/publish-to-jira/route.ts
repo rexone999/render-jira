@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
 
     console.log(
       "Available issue types:",
-      availableIssueTypes.map((t) => ({ id: t.id, name: t.name, subtask: t.subtask })),
+      availableIssueTypes.map((t: any) => ({ id: t.id, name: t.name, subtask: t.subtask })),
     )
 
     // Filter out sub-task issue types and find appropriate types
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
 
     console.log(
       "Regular (non-subtask) issue types:",
-      regularIssueTypes.map((t) => ({ id: t.id, name: t.name })),
+      regularIssueTypes.map((t: any) => ({ id: t.id, name: t.name })),
     )
 
     // Find specific issue types for EPICs and Stories only
@@ -84,29 +84,40 @@ export async function POST(request: NextRequest) {
     })
 
     const publishedStories = []
+    const failedStories = []
 
     // Create issues in Jira - Only EPICs and Stories
     for (const story of stories) {
       try {
-        // Skip if not epic or story
+        // Only allow publishing if type is exactly 'epic' or 'story'
         if (story.type !== "epic" && story.type !== "story") {
           console.log(`Skipping ${story.type} - only creating EPICs and Stories`)
           continue
         }
 
-        // Select appropriate issue type
-        let selectedIssueType = null
+        let selectedIssueType = null;
+        let usedType = null;
 
-        if (story.type === "epic" && epicIssueType) {
-          selectedIssueType = epicIssueType
+        if (story.type === "epic") {
+          if (epicIssueType) {
+            selectedIssueType = epicIssueType;
+            usedType = epicIssueType.name;
+          } else {
+            const msg = `No Epic issue type found for epic: ${story.title}`;
+            console.error(msg);
+            failedStories.push({ ...story, error: msg });
+            continue;
+          }
         } else if (story.type === "story") {
-          // Try Story type first, then Task, then fallback
-          selectedIssueType = storyIssueType || taskIssueType || fallbackIssueType
-        }
-
-        if (!selectedIssueType) {
-          console.error(`No suitable issue type found for ${story.type}: ${story.title}`)
-          continue
+          if (storyIssueType) {
+            selectedIssueType = storyIssueType;
+            usedType = storyIssueType.name;
+          } else {
+            const msg = `No Story issue type found for story: ${story.title}`;
+            console.error(msg);
+            failedStories.push({ ...story, error: msg });
+            continue;
+          }
         }
 
         console.log(`Using issue type for "${story.title}": ${selectedIssueType.name} (ID: ${selectedIssueType.id})`)
@@ -141,7 +152,6 @@ export async function POST(request: NextRequest) {
                 {
                   type: "text",
                   text: "Acceptance Criteria:",
-                  marks: [{ type: "strong" }],
                 },
               ],
             },
@@ -203,12 +213,14 @@ export async function POST(request: NextRequest) {
             ...story,
             jiraKey: createdIssue.key,
             jiraId: createdIssue.id,
+            usedType,
           })
           console.log(`Successfully created ${story.type}: ${createdIssue.key}`)
         } else {
           const errorText = await createResponse.text()
-          console.error(`Failed to create ${story.type} for story ${storyTitle}:`, errorText)
-
+          const msg = `Failed to create ${story.type} for story ${storyTitle} (type: ${usedType}): ${errorText}`;
+          console.error(msg)
+          failedStories.push({ ...story, error: msg });
           // Try creating with even more minimal fields if the full creation failed
           const minimalIssueData = {
             fields: {
@@ -240,30 +252,29 @@ export async function POST(request: NextRequest) {
               ...story,
               jiraKey: createdIssue.key,
               jiraId: createdIssue.id,
+              usedType,
             })
             console.log(`Successfully created minimal ${story.type}: ${createdIssue.key}`)
           } else {
             const retryErrorText = await retryResponse.text()
-            console.error(`Failed to create minimal ${story.type} for story ${storyTitle}:`, retryErrorText)
+            const retryMsg = `Failed to create minimal ${story.type} for story ${storyTitle} (type: ${usedType}): ${retryErrorText}`;
+            console.error(retryMsg)
+            failedStories.push({ ...story, error: retryMsg });
           }
         }
       } catch (storyError) {
-        console.error(`Error processing ${story.type} ${story.title || "Unknown"}:`, storyError)
-        // Continue with next story instead of failing completely
-        continue
+        const catchMsg = `Exception for story ${story.title}: ${storyError}`;
+        console.error(catchMsg);
+        failedStories.push({ ...story, error: catchMsg });
       }
     }
 
     return NextResponse.json({
-      success: true,
+      message: `Published ${publishedStories.length} stories to Jira backlog.`,
       publishedCount: publishedStories.length,
-      totalStories: stories.filter((s) => s.type === "epic" || s.type === "story").length,
-      stories: publishedStories,
-      projectKey: projectKey,
-      message:
-        publishedStories.length === stories.filter((s) => s.type === "epic" || s.type === "story").length
-          ? "All EPICs and Stories published successfully!"
-          : `${publishedStories.length} out of ${stories.filter((s) => s.type === "epic" || s.type === "story").length} EPICs and Stories published successfully.`,
+      totalStories: stories.length,
+      publishedStories,
+      failedStories,
     })
   } catch (error) {
     console.error("Error publishing to Jira:", error)

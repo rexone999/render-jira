@@ -134,7 +134,7 @@ export function ProjectSelector({ selectedProject, onProjectSelect }: ProjectSel
   }
 
   return (
-    <div className="bg-white border rounded-lg p-3 mb-4">
+    <div className="bg-blue-50 border rounded-lg p-3 mb-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <FolderOpen className="h-4 w-4 text-gray-600" />
@@ -224,10 +224,10 @@ export function ProjectSelector({ selectedProject, onProjectSelect }: ProjectSel
         ) : (
           <>
             <Select value={selectedProject || ""} onValueChange={onProjectSelect}>
-              <SelectTrigger className="h-8 text-sm">
+              <SelectTrigger className="h-8 text-sm bg-white border-gray-300 shadow-sm">
                 <SelectValue placeholder="Choose project..." />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-60 overflow-y-auto bg-white border border-gray-200 shadow-lg rounded-md">
                 {projects.map((project) => (
                   <SelectItem key={project.key} value={project.key}>
                     <span className="font-medium">{project.key}</span> - {project.name}
