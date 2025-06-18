@@ -52,6 +52,7 @@
       }
     ],
     "configurePage": {
+      "key": "po-assist-configure",
       "url": "/config?jwt={jwt}",
       "name": {
         "value": "Configure PO Assist"
